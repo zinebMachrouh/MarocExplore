@@ -63,4 +63,14 @@ class User extends Authenticatable implements JWTSubject
     {
         return [];
     }
+
+    public function routes()
+    {
+        return $this->hasMany(Route::class);
+    }
+
+    public function wishlist()
+    {
+        return $this->belongsToMany(Route::class, 'wishlist');
+    }
 }
