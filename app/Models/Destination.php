@@ -8,7 +8,7 @@ use Illuminate\Database\Eloquent\Model;
 class Destination extends Model
 {
     use HasFactory;
-    protected $fillable = ['name', 'location', 'list'];
+    protected $fillable = ['name', 'location', 'recommendations'];
 
     public function routes()
     {
