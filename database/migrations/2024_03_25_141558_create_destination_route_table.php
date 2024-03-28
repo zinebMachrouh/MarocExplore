@@ -13,6 +13,8 @@ return new class extends Migration
     {
         Schema::create('destination_route', function (Blueprint $table) {
             $table->id();
+            $table->foreignId('destination_id')->constrained()->cascadeOnUpdate()->cascadeOnUpdate();
+            $table->foreignId('route_id')->constrained()->cascadeOnDelete()->cascadeOnUpdate();
             $table->timestamps();
         });
     }
