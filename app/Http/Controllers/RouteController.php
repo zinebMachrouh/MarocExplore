@@ -19,7 +19,7 @@ class RouteController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api');
+        $this->middleware('auth:api', ['except' => ['index', 'search']]);
     }
     /**
      * @OA\Get(
@@ -95,7 +95,7 @@ class RouteController extends Controller
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'duration' => 'required|integer|min:0',
-            'picture' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'picture' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
             'destinations' => 'required|string',
 
         ]);
@@ -195,7 +195,7 @@ class RouteController extends Controller
             'picture' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
         ]);
 
-        if ($route->user_id !== Auth::user()->id) {
+        if ($route->user_id === Auth::user()->id) {
             return response()->json([
                 'message' => 'Forbidden Content',
                 'status' => 403

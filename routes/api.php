@@ -27,7 +27,6 @@ Route::get('/routes',[RouteController::class,'index']);
 Route::post('/routes/create', [RouteController::class, 'store']);
 Route::put('/routes/{route}/update', [RouteController::class, 'update']);
 Route::delete('/routes/{route}/delete', [RouteController::class, 'destroy']);
-
 Route::post('/routes/search', [RouteController::class, 'search']);
 
 Route::get('/addToWatchlist/{route}', [RouteController::class, 'addToWatchlist']);

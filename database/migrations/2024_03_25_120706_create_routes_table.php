@@ -16,7 +16,7 @@ return new class extends Migration
             $table->string('title');
             $table->foreignId('category_id')->constrained();
             $table->integer('duration');
-            $table->string('picture',255);
+            $table->string('picture',255)->nullable();
             $table->foreignId('user_id')->constrained();
             $table->timestamps();
         });
