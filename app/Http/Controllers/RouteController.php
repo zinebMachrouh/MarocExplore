@@ -2,12 +2,14 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Resources\RouteResource;
 use App\Models\Category;
 use App\Models\Destination;
 use App\Models\Route;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use PhpParser\Node\Stmt\Else_;
 
 /**
  * @OA\Tag(
@@ -19,7 +21,7 @@ class RouteController extends Controller
 {
     public function __construct()
     {
-        $this->middleware('auth:api', ['except' => ['index', 'search']]);
+        $this->middleware('auth:api', ['except' => ['index', 'search', 'filter']]);
     }
     /**
      * @OA\Get(
@@ -45,12 +47,21 @@ class RouteController extends Controller
      */
     public function index()
     {
-        $routes = Route::with('destinations')->get();
+        $routes = Route::with('destinations', 'category', 'user')->get();
+        $categories = Category::all();
+        $destinations = Destination::all();
 
-        return response()->json([
-            "routes" => $routes,
-            "status" => 200
-        ]);
+        $responseData = [
+            "routes" => RouteResource::collection($routes),
+            "categories" => $categories,
+            "destinations" => $destinations,
+            "status" => 200,
+        ];
+        if (Auth::check()) {
+            $user = Auth::user();
+            $responseData['user'] = $user;
+        }
+        return response()->json($responseData);
     }
     /**
      * @OA\Post(
@@ -96,11 +107,9 @@ class RouteController extends Controller
             'category_id' => 'required|exists:categories,id',
             'duration' => 'required|integer|min:0',
             'picture' => 'image|mimes:jpeg,png,jpg,gif,svg|max:2048',
-            'destinations' => 'required|string',
-
+            'destinations' => 'required|array',
         ]);
 
-        $destinations = explode(",", $validatedData['destinations']);
 
 
         $url = $request->file('picture')->store('routes', 'public');
@@ -109,6 +118,7 @@ class RouteController extends Controller
 
         $route = Route::create($validatedData);
 
+        $destinations = $request->input('destinations', []);
         foreach ($destinations as $destination) {
             if (Destination::find($destination)) {
                 if (count($destinations) < 2) {
@@ -188,33 +198,43 @@ class RouteController extends Controller
      */
     public function update(Request $request, Route $route)
     {
+
         $validatedData = $request->validate([
             'title' => 'required|string|max:255',
             'category_id' => 'required|exists:categories,id',
             'duration' => 'required|integer|min:0',
-            'picture' => 'required|image|mimes:jpeg,png,jpg,gif,svg|max:2048',
+            'destinations' => 'required|array',
+            'destinations.*' => 'exists:destinations,id',
         ]);
 
-        if ($route->user_id === Auth::user()->id) {
+        if ($route->user_id !== Auth::user()->id) {
             return response()->json([
                 'message' => 'Forbidden Content',
                 'status' => 403
             ]);
         }
 
-        $url = $request->file('picture')->store('routes', 'public');
-        $validatedData['picture'] = $url;
+        if ($request->hasFile('picture')) {
+            $url = $request->file('picture')->store('routes', 'public');
+            $validatedData['picture'] = $url;
+        }
 
-        if ($route->update($validatedData)) {
+        $route->title = $validatedData['title'];
+        $route->category_id = $validatedData['category_id'];
+        $route->duration = $validatedData['duration'];
+
+        $route->destinations()->sync($validatedData['destinations']);
+
+        if ($route->save()) {
             return response()->json([
                 'message' => 'Route updated successfully',
                 'route' => $route,
-                'status' => 201
+                'status' => 200
             ]);
         } else {
             return response()->json([
-                'message' => 'Could not updqte route',
-                'status' => 401
+                'message' => 'Could not update route',
+                'status' => 500
             ]);
         }
     }
@@ -304,12 +324,24 @@ class RouteController extends Controller
     public function search(Request $request)
     {
         $validatedData = $request->validate([
-            'name' => 'required|string|max:255',
+            'title' => 'required|string|max:255',
         ]);
-        $categoryName = $validatedData['name'];
-        $routes = Route::whereHas('category', function ($query) use ($categoryName) {
-            $query->where('name', 'like', '%' . $categoryName . '%');
-        })->with('destinations')->get();
+        $title = $validatedData['title'];
+        $routes = Route::where('title', 'like', '%' . $title . '%')->with('destinations', 'category', 'user')->get();
+
+        return response()->json([
+            'message' => 'Search By Category',
+            'routes' => $routes,
+            'status' => 200
+        ]);
+    }
+    public function filter(Request $request)
+    {
+        $validatedData = $request->validate([
+            'category' => 'required|exists:categories,id',
+        ]);
+        $category = $validatedData['category'];
+        $routes = Route::where('category_id', $category)->with('destinations', 'category')->get();;
 
         return response()->json([
             'message' => 'Search By Category',
@@ -354,7 +386,6 @@ class RouteController extends Controller
     public function addToWatchlist(Route $route)
     {
         $user = User::find(Auth::user()->id);
-
         if ($user->wishlist()->where('route_id', $route->id)->exists()) {
             return response()->json([
                 'message' => 'Route is already in the watchlist',
@@ -422,6 +453,14 @@ class RouteController extends Controller
             'message' => 'Destination created successfully',
             'destination' => $destination,
             'status' => 201
+        ], 201);
+    }
+
+    public function show(Route $route)
+    {
+        return response()->json([
+            'route' => $route,
+            'status' => 200
         ], 201);
     }
 }

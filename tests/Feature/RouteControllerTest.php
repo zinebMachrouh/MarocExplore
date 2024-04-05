@@ -8,7 +8,9 @@ use App\Models\Route;
 use App\Models\Category;
 use Illuminate\Http\UploadedFile;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+
 // use PHPUnit\Framework\TestCase;
 
 class RouteControllerTest extends TestCase
@@ -63,26 +65,37 @@ class RouteControllerTest extends TestCase
     //  */
     // public function testStore()
     // {
+    //     // Create a category
     //     $category = Category::factory()->create();
+
+    //     // Mock the file upload
+    //     Storage::fake('public'); // Assuming you're using public disk for file storage
     //     $image = UploadedFile::fake()->image('test_image.jpg');
+
+    //     // Make a POST request to your API route
     //     $response = $this->postJson('/api/routes/create', [
     //         'title' => 'Test Route',
     //         'category_id' => $category->id,
     //         'duration' => 120,
     //         'picture' => $image,
     //         'destinations' => '1,2',
-    //         'user_id'=>$this->user->id
+    //         'user_id' => $this->user->id
     //     ]);
-    //     $response->assertStatus(201)
-    //         ->assertJson([
-    //             'message' => 'Route created successfully',
-    //             'status' => 201,
-    //         ]);
 
+    //     // Assert the response
+    //     $response->assertStatus(201)
+    //     ->assertJson([
+    //         'message' => 'Route created successfully',
+    //         'status' => 201,
+    //     ]);
+
+    //     // Optionally, you can assert that the file was stored correctly
+    //     Storage::disk('public')->assertExists('path/to/expected/image.jpg');
+
+    //     // Retrieve and store route data for further testing, if needed
     //     $routeData = $response->json()['route'];
     //     $this->route = $routeData;
     // }
-
     // /**
     //  * Test update method.
     //  * @depends testStore
